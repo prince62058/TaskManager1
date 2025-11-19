@@ -79,15 +79,6 @@ app.use("/api/reports", reportRoutes)
 // serve static files from "uploads" folder
 app.use("/uploads", express.static(path.join(__dirname, "uploads")))
 
-// Handle 404 for API routes
-app.use("/api/*", (req, res, next) => {
-  res.status(404).json({
-    success: false,
-    statusCode: 404,
-    message: `API route not found: ${req.method} ${req.originalUrl}`,
-  })
-})
-
 // General error handler
 app.use((err, req, res, next) => {
   const statusCode = err.statusCode || 500
@@ -98,5 +89,23 @@ app.use((err, req, res, next) => {
     success: false,
     statusCode,
     message,
+  })
+})
+
+// Handle 404 for all routes (must be last)
+app.use((req, res, next) => {
+  // If it's an API route, return JSON
+  if (req.path.startsWith("/api")) {
+    return res.status(404).json({
+      success: false,
+      statusCode: 404,
+      message: `API route not found: ${req.method} ${req.originalUrl}`,
+    })
+  }
+  // For other routes, return simple 404
+  res.status(404).json({
+    success: false,
+    statusCode: 404,
+    message: "Route not found",
   })
 })

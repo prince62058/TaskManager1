@@ -40,6 +40,19 @@ const ManageTasks = () => {
       setTabs(statusArray)
     } catch (error) {
       console.log("Error fetching tasks: ", error)
+      
+      // Handle authentication errors
+      if (error.response?.status === 401) {
+        toast.error("Session expired! Please login again.")
+        // Redirect will be handled by axios interceptor
+      } else if (error.response?.status >= 500) {
+        toast.error("Server error! Please try again later.")
+      } else if (error.message === "Network Error" || error.code === "ERR_NETWORK") {
+        toast.error("Network error! Please check your connection.")
+      }
+      
+      // Set empty array on error to prevent UI issues
+      setAllTasks([])
     }
   }
 

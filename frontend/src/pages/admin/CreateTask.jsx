@@ -80,14 +80,36 @@ const CreateTask = () => {
 
       const response = await axiosInstance.post("/tasks/create", taskPayload)
 
-      toast.success("Task created successfully!")
+      if (response.data && response.data.task) {
+        toast.success("Task created successfully!")
+        
+        clearData()
 
-      clearData()
-
-      // console.log(response.data)
+        // Navigate to tasks list after successful creation
+        if (isUser) {
+          navigate("/user/tasks")
+        } else {
+          navigate("/admin/tasks")
+        }
+      } else {
+        throw new Error("Task creation failed - no response data")
+      }
     } catch (error) {
       console.log("Error creating task: ", error)
-      toast.error("Error creating task!")
+      
+      // Better error messages
+      if (error.response?.status === 401) {
+        toast.error("Session expired! Please login again.")
+        navigate("/login")
+      } else if (error.response?.status === 400) {
+        toast.error(error.response?.data?.message || "Invalid task data!")
+      } else if (error.response?.status === 500) {
+        toast.error("Server error! Please try again later.")
+      } else if (error.message === "Network Error" || error.code === "ERR_NETWORK") {
+        toast.error("Network error! Please check your connection.")
+      } else {
+        toast.error(error.response?.data?.message || "Error creating task! Please try again.")
+      }
     }
   }
 

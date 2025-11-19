@@ -14,23 +14,52 @@ export const createTask = async (req, res, next) => {
       todoChecklist,
     } = req.body
 
-    if (!Array.isArray(assignedTo)) {
-      return next(errorHandler(400, "assignedTo must be an array of user IDs"))
+    // Validate required fields
+    if (!title || !title.trim()) {
+      return next(errorHandler(400, "Task title is required"))
+    }
+
+    if (!dueDate) {
+      return next(errorHandler(400, "Due date is required"))
+    }
+
+    if (!Array.isArray(assignedTo) || assignedTo.length === 0) {
+      return next(errorHandler(400, "Task must be assigned to at least one user"))
+    }
+
+    // Ensure createdBy is set
+    if (!req.user || !req.user.id) {
+      return next(errorHandler(401, "User authentication required"))
     }
 
     const task = await Task.create({
-      title,
-      description,
-      priority,
-      dueDate,
+      title: title.trim(),
+      description: description?.trim() || "",
+      priority: priority || "Low",
+      dueDate: new Date(dueDate),
       assignedTo,
-      attachments,
-      todoChecklist,
-      createdBy: req.user.id,
+      attachments: attachments || [],
+      todoChecklist: todoChecklist || [],
+      createdBy: [req.user.id], // Ensure it's an array as per schema
+      status: "Pending", // Default status
+      progress: 0, // Default progress
     })
 
-    res.status(201).json({ message: "Task created successfully", task })
+    // Populate the task with user details before sending response
+    const populatedTask = await Task.findById(task._id)
+      .populate("assignedTo", "name email profileImageUrl")
+      .populate("createdBy", "name email profileImageUrl")
+
+    res.status(201).json({ 
+      success: true,
+      message: "Task created successfully", 
+      task: populatedTask 
+    })
   } catch (error) {
+    console.error("Error creating task:", error)
+    if (error.name === "ValidationError") {
+      return next(errorHandler(400, error.message))
+    }
     next(error)
   }
 }

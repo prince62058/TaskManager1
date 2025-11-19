@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import AuthLayout from "../../components/AuthLayout"
 import { FaEyeSlash, FaPeopleGroup } from "react-icons/fa6"
 import { FaEye } from "react-icons/fa"
@@ -21,7 +21,18 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState(null)
 
-  const { loading } = useSelector((state) => state.user)
+  const { loading, currentUser } = useSelector((state) => state.user)
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (currentUser) {
+      if (currentUser.role === "admin") {
+        navigate("/admin/dashboard", { replace: true })
+      } else {
+        navigate("/user/dashboard", { replace: true })
+      }
+    }
+  }, [currentUser, navigate])
 
   const handleSubmit = async (e) => {
     e.preventDefault()

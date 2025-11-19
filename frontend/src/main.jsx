@@ -7,9 +7,9 @@ import { persistor, store } from "./redux/store.js"
 import { PersistGate } from "redux-persist/integration/react"
 
 createRoot(document.getElementById("root")).render(
-  <PersistGate persistor={persistor}>
-    <Provider store={store}>
+  <Provider store={store}>
+    <PersistGate loading={<div className="flex items-center justify-center min-h-screen">Loading...</div>} persistor={persistor}>
       <App />
-    </Provider>
-  </PersistGate>
+    </PersistGate>
+  </Provider>
 )

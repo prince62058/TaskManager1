@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import AuthLayout from "../../components/AuthLayout"
 import { FaEyeSlash, FaPeopleGroup } from "react-icons/fa6"
 import { FaEye } from "react-icons/fa"
@@ -7,9 +7,11 @@ import { validateEmail } from "../../utils/helper"
 import ProfilePhotoSelector from "../../components/ProfilePhotoSelector"
 import axiosInstance from "../../utils/axioInstance"
 import uploadImage from "../../utils/uploadImage"
+import { useSelector } from "react-redux"
 
 const SignUp = () => {
   const navigate = useNavigate()
+  const { currentUser } = useSelector((state) => state.user)
 
   const [fullName, setFullName] = useState("")
   const [email, setEmail] = useState("")
@@ -19,6 +21,17 @@ const SignUp = () => {
   const [profilePic, setProfilePic] = useState(null)
   const [adminInviteToken, setAdminInviteToken] = useState("")
   const [showAdminInviteToken, setShowAdminInviteToken] = useState(false)
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (currentUser) {
+      if (currentUser.role === "admin") {
+        navigate("/admin/dashboard", { replace: true })
+      } else {
+        navigate("/user/dashboard", { replace: true })
+      }
+    }
+  }, [currentUser, navigate])
 
   const handleSubmit = async (e) => {
     e.preventDefault()

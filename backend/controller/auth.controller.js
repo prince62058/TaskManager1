@@ -78,14 +78,19 @@ export const signin = async (req, res, next) => {
 
     const { password: pass, ...rest } = validUser._doc
 
+    // Better cookie settings for mobile Safari compatibility
+    const isProduction = process.env.NODE_ENV === "production"
+    const cookieOptions = {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
+      maxAge: 15 * 24 * 60 * 60 * 1000, // 15 days
+      path: "/", // Ensure cookie is available for all paths
+    }
+
     res
       .status(200)
-      .cookie("access_token", token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-        maxAge: 15 * 24 * 60 * 60 * 1000, // 15 days
-      })
+      .cookie("access_token", token, cookieOptions)
       .json(rest)
   } catch (error) {
     next(error)
@@ -151,11 +156,13 @@ export const uploadImage = async (req, res, next) => {
 
 export const signout = async (req, res, next) => {
   try {
+    const isProduction = process.env.NODE_ENV === "production"
     res
       .clearCookie("access_token", {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        secure: isProduction,
+        sameSite: isProduction ? "none" : "lax",
+        path: "/",
       })
       .status(200)
       .json("User has been loggedout successfully!")

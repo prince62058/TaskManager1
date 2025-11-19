@@ -60,7 +60,8 @@ const MyTask = () => {
   }
 
   const handleClick = (taskId) => {
-    navigate(`/user/task-details/${taskId}`)
+    // Use replace: false to allow back navigation, but prevent reload
+    navigate(`/user/task-details/${taskId}`, { replace: false })
   }
 
   useEffect(() => {

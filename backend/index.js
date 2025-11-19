@@ -31,23 +31,32 @@ const app = express()
 const allowedOrigins = [
   process.env.FRONT_END_URL,
   "http://localhost:5173",
+  "http://127.0.0.1:5173",
   "https://taskmanager-frontend-k5lw.onrender.com",
 ].filter(Boolean)
 
 app.use(
   cors({
     origin: function (origin, callback) {
-      // Allow requests with no origin (like mobile apps or curl requests)
+      // Allow requests with no origin (like mobile apps, curl requests, or same-origin requests)
       if (!origin) return callback(null, true)
-      if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
+      if (allowedOrigins.indexOf(origin) !== -1) {
         callback(null, true)
       } else {
-        callback(new Error("Not allowed by CORS"))
+        // In development, be more permissive for mobile testing
+        if (process.env.NODE_ENV !== "production") {
+          console.log(`[CORS] Allowing origin: ${origin}`)
+          callback(null, true)
+        } else {
+          callback(new Error("Not allowed by CORS"))
+        }
       }
     },
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    credentials: true,
-    allowedHeaders: ["Content-Type", "Authorization"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    credentials: true, // Important for cookies
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+    exposedHeaders: ["Set-Cookie"],
+    maxAge: 86400, // 24 hours
   })
 )
 
@@ -70,6 +79,16 @@ app.use("/api/reports", reportRoutes)
 // serve static files from "uploads" folder
 app.use("/uploads", express.static(path.join(__dirname, "uploads")))
 
+// Handle 404 for API routes
+app.use("/api/*", (req, res, next) => {
+  res.status(404).json({
+    success: false,
+    statusCode: 404,
+    message: `API route not found: ${req.method} ${req.originalUrl}`,
+  })
+})
+
+// General error handler
 app.use((err, req, res, next) => {
   const statusCode = err.statusCode || 500
 

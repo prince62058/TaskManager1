@@ -44,10 +44,18 @@ const TaskCard = ({
     }
   }
 
+  const handleCardClick = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (onClick) {
+      onClick()
+    }
+  }
+
   return (
     <div
       className="bg-white rounded-xl py-4 shadow-md shadow-gray-100 border border-gray-200/50 cursor-pointer"
-      onClick={onClick}
+      onClick={handleCardClick}
     >
       <div className="flex items-end gap-3 px-4">
         <div

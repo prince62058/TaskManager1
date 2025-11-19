@@ -1,14 +1,17 @@
 import React, { useEffect, useState } from "react"
-import { useParams } from "react-router-dom"
+import { useParams, useNavigate } from "react-router-dom"
 import axiosInstance from "../../utils/axioInstance"
 import DashboardLayout from "../../components/DashboardLayout"
 import moment from "moment"
 import AvatarGroup from "../../components/AvatarGroup"
 import { FaExternalLinkAlt } from "react-icons/fa"
+import toast from "react-hot-toast"
 
 const TaskDetails = () => {
   const { id } = useParams()
+  const navigate = useNavigate()
   const [task, setTask] = useState(null)
+  const [loading, setLoading] = useState(true)
 
   const getStatusTagColor = (status) => {
     switch (status) {
@@ -24,16 +27,39 @@ const TaskDetails = () => {
   }
 
   const getTaskDetailsById = async () => {
+    if (!id) {
+      console.error("[TaskDetails] Task ID is missing")
+      toast.error("Task ID is missing")
+      setLoading(false)
+      navigate("/user/tasks", { replace: true })
+      return
+    }
+
     try {
+      setLoading(true)
+      console.log(`[TaskDetails] Fetching task with ID: ${id}`)
       const response = await axiosInstance.get(`/tasks/${id}`)
 
       if (response.data) {
         const taskInfo = response.data
-
+        console.log(`[TaskDetails] Task fetched successfully`)
         setTask(taskInfo)
       }
     } catch (error) {
-      console.log("Error fetching task details: ", error)
+      console.error("[TaskDetails] Error fetching task details: ", error)
+      if (error.response?.status === 404) {
+        console.error(`[TaskDetails] Task not found with ID: ${id}`)
+        toast.error("Task not found")
+        navigate("/user/tasks", { replace: true })
+      } else if (error.response?.status === 401) {
+        console.error("[TaskDetails] Unauthorized - session expired")
+        toast.error("Session expired. Please login again.")
+        // Redirect will be handled by axios interceptor
+      } else {
+        toast.error("Failed to load task details")
+      }
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -71,8 +97,42 @@ const TaskDetails = () => {
   useEffect(() => {
     if (id) {
       getTaskDetailsById()
+    } else {
+      console.error("[TaskDetails] No task ID provided in URL")
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
+
+  if (loading) {
+    return (
+      <DashboardLayout activeMenu={"My Tasks"}>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading task details...</p>
+          </div>
+        </div>
+      </DashboardLayout>
+    )
+  }
+
+  if (!task) {
+    return (
+      <DashboardLayout activeMenu={"My Tasks"}>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <p className="text-gray-600 mb-4">Task not found</p>
+            <button
+              onClick={() => navigate("/user/tasks", { replace: true })}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
+              Back to Tasks
+            </button>
+          </div>
+        </div>
+      </DashboardLayout>
+    )
+  }
 
   return (
     <DashboardLayout activeMenu={"My Tasks"}>

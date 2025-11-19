@@ -23,16 +23,21 @@ const Login = () => {
 
   const { loading, currentUser } = useSelector((state) => state.user)
 
-  // Redirect if already logged in
+  // Redirect if already logged in (but only if not currently logging in)
   useEffect(() => {
-    if (currentUser) {
-      if (currentUser.role === "admin") {
-        navigate("/admin/dashboard", { replace: true })
-      } else {
-        navigate("/user/dashboard", { replace: true })
-      }
+    if (currentUser && !loading) {
+      // Small delay to prevent navigation conflicts
+      const timer = setTimeout(() => {
+        if (currentUser.role === "admin") {
+          navigate("/admin/dashboard", { replace: true })
+        } else {
+          navigate("/user/dashboard", { replace: true })
+        }
+      }, 50)
+
+      return () => clearTimeout(timer)
     }
-  }, [currentUser, navigate])
+  }, [currentUser, navigate, loading])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -64,15 +69,25 @@ const Login = () => {
         }
       )
 
-      // console.log(response.data)
+      // Dispatch success first to update Redux state
+      dispatch(signInSuccess(response.data))
 
-      if (response.data.role === "admin") {
-        dispatch(signInSuccess(response.data))
-        navigate("/admin/dashboard")
-      } else {
-        dispatch(signInSuccess(response.data))
-        navigate("/user/dashboard")
-      }
+      // Mark that we just logged in to skip verification
+      sessionStorage.setItem("justLoggedIn", "true")
+
+      // Wait a bit for state to update and cookie to be set
+      // Then navigate to prevent reload issues
+      setTimeout(() => {
+        if (response.data.role === "admin") {
+          navigate("/admin/dashboard", { replace: true })
+        } else {
+          navigate("/user/dashboard", { replace: true })
+        }
+        // Clear the flag after navigation
+        setTimeout(() => {
+          sessionStorage.removeItem("justLoggedIn")
+        }, 1000)
+      }, 100)
     } catch (error) {
       if (error.response && error.response.data.message) {
         setError(error.response.data.message)

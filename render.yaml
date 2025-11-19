@@ -1,0 +1,29 @@
+services:
+  # Backend Service
+  - type: web
+    name: taskmanager-backend
+    env: node
+    plan: free
+    buildCommand: cd backend && npm install
+    startCommand: cd backend && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGO_URI
+        sync: false  # Set this in Render dashboard
+      - key: FRONT_END_URL
+        sync: false  # Set this to your frontend URL after deployment
+      - key: PORT
+        value: 10000  # Render automatically sets this, but good to have default
+    healthCheckPath: /api/tasks
+
+  # Frontend Service
+  - type: web
+    name: taskmanager-frontend
+    env: static
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: frontend/dist
+    envVars:
+      - key: VITE_API_URL
+        sync: false  # Set this to your backend URL after deployment
+
